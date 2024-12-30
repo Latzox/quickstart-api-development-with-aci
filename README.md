@@ -1,4 +1,4 @@
-# Quickstart Azure Kubernetes Service
+# Quickstart API Development with Azure Container Instance (ACI)
 
 This repository contains the code and configurations for deploying and managing applications and infrastructure using Kubernetes, Azure, and Docker. It is structured to support various stages of development, from infrastructure provisioning to application deployment.
 
