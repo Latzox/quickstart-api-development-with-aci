@@ -24,12 +24,6 @@ param acrRgName string = 'rg-acr-prod-001'
 @description('The name of the Azure Container Registry')
 param acrName string = 'latzox'
 
-@description('Role definition ID for ACR pull role.')
-param roleDefinitionId string = subscriptionResourceId(
-  'Microsoft.Authorization/roleDefinitions',
-  '7f951dda-4ed3-4680-a7ca-43fe172d538d'
-)
-
 @description('The network configuration for the container')
 param network object = {
   port: 443
@@ -53,6 +47,12 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
     application: 'quickstart-api-development-with-aci'
     environment: 'dev'
   }
+}
+
+@description('The existing acr resource to assign the pull role to the container group')
+resource acr 'Microsoft.ContainerRegistry/registries@2023-11-01-preview' existing = {
+  name: acrName
+  scope: resourceGroup(acrSubId, acrRgName)
 }
 
 @description('The avm module to deploy the container group')
@@ -87,30 +87,17 @@ module containerGroup 'br/public:avm/res/container-instance/container-group:0.4.
       network
     ]
     location: location
-    managedIdentities: {
-      systemAssigned: true
-    }
+    imageRegistryCredentials: [
+      {
+        server: '${acrName}.azurecr.io'
+        username: acrName
+        password: acr.listCredentials().passwords[0].value
+      }
+    ]
     tags: {
       application: 'quickstart-api-development-with-aci'
       environment: 'dev'
     }
-  }
-}
-
-@description('The existing acr resource to assign the pull role to the container group')
-resource acr 'Microsoft.ContainerRegistry/registries@2023-11-01-preview' existing = {
-  name: acrName
-  scope: resourceGroup(acrSubId, acrRgName)
-}
-
-@description('The role assignment to assign the pull role to the container group')
-module roleAssignment 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.1' = {
-  scope: resourceGroup(acrSubId, acrRgName)
-  name: guid(acrRgName, 'roleAssignment')
-  params: {
-    principalId: containerGroup.outputs.systemAssignedMIPrincipalId
-    resourceId: acr.id
-    roleDefinitionId: roleDefinitionId
   }
 }
 
