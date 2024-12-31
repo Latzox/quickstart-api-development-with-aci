@@ -1,30 +1,23 @@
 function Setup-AzureProject {
     <#
         .SYNOPSIS
-        Automates the setup and configuration of a new Azure project such as AKS with ACR integration and GitHub federated identity for secure CI/CD workflows.
+        Automates the setup and configuration of a new Azure project such as ACI with ACR integration and GitHub federated identity for secure CI/CD workflows.
 
         .DESCRIPTION
         This script performs the following:
         - Creates an Azure AD Service Principal for authentication.
         - Configures GitHub federated identity with Azure AD for seamless CI/CD.
-        - Deploys an AKS resource group with ACR integration.
-        - Assigns necessary Azure RBAC roles for AKS and ACR operations.
+        - Assigns necessary Azure RBAC roles for ACI and ACR operations.
         - Configures GitHub repository secrets for secure authentication.
 
         .PARAMETER DisplayName
         The display name for the Azure AD Service Principal.
 
-        .PARAMETER AksSubscriptionId
-        The subscription ID where the AKS cluster will be deployed.
+        .PARAMETER DockerImageName
+        The name of the Docker image for deployment.
 
-        .PARAMETER AksResourceGroup
-        The resource group name for the AKS cluster.
-
-        .PARAMETER AksClusterName
-        The name of the AKS cluster.
-
-        .PARAMETER AksRegion
-        The Azure region where the AKS cluster will be deployed.
+        .PARAMETER AciSubscriptionId
+        The subscription ID where the ACI will be deployed.
 
         .PARAMETER AcrSubscriptionId
         The subscription ID for the Azure Container Registry.
@@ -35,9 +28,6 @@ function Setup-AzureProject {
         .PARAMETER AcrName
         The name of the Azure Container Registry.
 
-        .PARAMETER SshKeyName
-        The SSH key name for the AKS cluster.
-
         .PARAMETER GitHubOrg
         The GitHub organization name.
 
@@ -47,15 +37,6 @@ function Setup-AzureProject {
         .PARAMETER EnvironmentNames
         The list of environment names for GitHub workflows.
 
-        .PARAMETER DockerImageName
-        The name of the Docker image for deployment.
-
-        .PARAMETER DeploymentManifestPath
-        The path to the Kubernetes deployment manifest.
-
-        .PARAMETER ServiceManifestPath
-        The path to the Kubernetes service manifest.
-
         .INPUTS
         None. This script does not accept piped input.
 
@@ -63,29 +44,23 @@ function Setup-AzureProject {
         None. This script outputs verbose information to the console during execution.
 
         .EXAMPLE
-        PS> Setup-AzureProject -DisplayName "Quickstart AKS" `
-                -AksSubscriptionId "<SubscriptionID>" `
-                -AksResourceGroup "rg-k8s-dev-001" `
-                -AksClusterName "latzok8s" `
-                -AksRegion "switzerlandnorth" `
-                -DeploymentManifestPath "./aks-deploy/deployment.yaml" `
-                -ServiceManifestPath "./aks-deploy/service.yaml" `
-                -DockerImageName "quickstart-aks-py" `
+        PS> Setup-AzureProject -DisplayName "Quickstart ACI API Development" `
+                -DockerImageName "quickstart-aci-dev-api" `
+                -AciSubscriptionId "<SubscriptionID>" `
                 -AcrSubscriptionId "<SubscriptionID>" `
                 -AcrResourceGroup "rg-acr-prod-001" `
-                -AcrName "latzox" ` 
-                -SshKeyName "ssh-latzok8s-dev-001" ` 
-                -GitHubOrg "Latzox" ` 
-                -RepoName "quickstart-azure-kubernetes-service" ` 
-                -EnvironmentNames @('aks-prod', 'build', 'infra-preview', 'infra-prod')
+                -AcrName "latzox" `
+                -GitHubOrg "Latzox" `
+                -RepoName "quickstart-azure-kubernetes-service" `
+                -EnvironmentNames @('build', 'infra')
                 
         .NOTES
         Author: Latzox
-        Date: 02-12-2024
-        Version: 1.2
+        Date: 31-12-2024
+        Version: 1.0
 
         .LINK
-        https://github.com/Latzox/quickstart-azure-kubernetes-service
+        https://github.com/Latzox/quickstart-api-development-with-aci
     #>
 
 
@@ -94,30 +69,13 @@ function Setup-AzureProject {
         [Parameter(Mandatory = $true, HelpMessage = "Display name for the Entra ID Service Principal.")]
         [string]$DisplayName,
 
-        # AKS Parameters
-        [Parameter(Mandatory = $true, HelpMessage = "The subscription ID where the AKS cluster will be deployed.")]
-        [ValidateNotNullOrEmpty()]
-        [string]$AksSubscriptionId,
-
-        [Parameter(Mandatory = $true, HelpMessage = "The resource group name for the AKS cluster.")]
-        [ValidateNotNullOrEmpty()]
-        [string]$AksResourceGroup,
-
-        [Parameter(Mandatory = $true, HelpMessage = "The name of the AKS cluster.")]
-        [ValidateNotNullOrEmpty()]
-        [string]$AksClusterName,
-
-        [Parameter(Mandatory = $true, HelpMessage = "The Azure region where the AKS cluster will be deployed.")]
-        [string]$AksRegion,
-
-        [Parameter(Mandatory = $true, HelpMessage = "The path to the Kubernetes deployment manifest. (./aks-deploy/deployment.yaml)")]
-        [string]$DeploymentManifestPath,
-
-        [Parameter(Mandatory = $true, HelpMessage = "The path to the Kubernetes service manifest. (./aks-deploy/service.yaml)")]
-        [string]$ServiceManifestPath,
-
+        # ACI Parameters
         [Parameter(Mandatory = $true, HelpMessage = "The name of the Docker image for deployment.")]
         [string]$DockerImageName,
+
+        [Parameter(Mandatory = $true, HelpMessage = "The subscription ID for the Azure Container Instance.")]
+        [ValidateNotNullOrEmpty()]
+        [string]$AciSubscriptionId,
 
         # ACR Parameters
         [Parameter(Mandatory = $true, HelpMessage = "The subscription ID for the Azure Container Registry.")]
@@ -131,10 +89,6 @@ function Setup-AzureProject {
         [Parameter(Mandatory = $true, HelpMessage = "The name of the Azure Container Registry.")]
         [ValidateNotNullOrEmpty()]
         [string]$AcrName,
-
-        # SSH Parameters
-        [Parameter(Mandatory = $true, HelpMessage = "The SSH key name for the AKS cluster.")]
-        [string]$SshKeyName,
 
         # GitHub Parameters
         [Parameter(Mandatory = $true, HelpMessage = "The GitHub organization name.")]
@@ -173,30 +127,13 @@ function Setup-AzureProject {
     }
 
     Process {      
-        # Step 1: Deploy the AKS Resource Group
-        Set-SubscriptionContext -SubscriptionId $AksSubscriptionId
-        try {
-            Write-Verbose "Checking if AKS resource group exists..."
-            $aksResourceGroupExists = Get-AzResourceGroup -Name $AksResourceGroup -ErrorAction SilentlyContinue
-
-            if (-not $aksResourceGroupExists) {
-                New-AzResourceGroup -Name $AksResourceGroup -Location $AksRegion
-                Write-Verbose "AKS resource group '$AksResourceGroup' created successfully in region '$AksRegion'."
-            } else {
-                Write-Verbose "AKS resource group '$AksResourceGroup' already exists."
-            }
-        } catch {
-            Write-Error "Failed to create or verify the AKS resource group: $_"
-            exit 1
-        }
-
-        # Step 2: Create Azure AD Service Principal
+        # Step 1: Create Azure AD Service Principal
         try {
             Write-Verbose "Checking for existing Azure AD Service Principal..."
             $existingSp = Get-AzADServicePrincipal -DisplayName $DisplayName -ErrorAction SilentlyContinue
 
             if (-not $existingSp) {
-                $sp = New-AzADServicePrincipal -DisplayName $DisplayName -Role "Contributor" -Scope "/subscriptions/$AksSubscriptionId"
+                $sp = New-AzADServicePrincipal -DisplayName $DisplayName -Role "Contributor" -Scope "/subscriptions/$AciSubscriptionId"
                 Write-Verbose "Service Principal created successfully. AppId: $($sp.AppId)"
             } else {
                 $sp = $existingSp
@@ -207,7 +144,7 @@ function Setup-AzureProject {
             exit 1
         }
 
-        # Step 3: Configure Federated Identity Credentials for GitHub Actions
+        # Step 2: Configure Federated Identity Credentials for GitHub Actions
         try {
             Write-Verbose "Checking and creating Federated Identity Credentials for GitHub Actions..."
 
@@ -221,7 +158,7 @@ function Setup-AzureProject {
                 Write-Verbose "Processing environment: $envName"
 
                 # Check if the federated credential already exists for this environment
-                $existingCredential = Get-AzADAppFederatedCredential -ApplicationObjectId (Get-AzADApplication -DisplayName "Quickstart AKS").Id -ErrorAction SilentlyContinue |
+                $existingCredential = Get-AzADAppFederatedCredential -ApplicationObjectId (Get-AzADApplication -DisplayName $DisplayName).Id -ErrorAction SilentlyContinue |
                     Where-Object { $_.Name -eq "OIDC-$envName" }
 
                 if (-not $existingCredential) {
@@ -244,26 +181,10 @@ function Setup-AzureProject {
             exit 1
         }
 
-        # Step 4: Create an SSH Key in the AKS Resource Group
-        try {
-            Write-Verbose "Checking for existing SSH key..."
-            $sshKey = Get-AzSshKey -ResourceGroupName $AksResourceGroup -Name $SshKeyName -ErrorAction SilentlyContinue
-
-            if (-not $sshKey) {
-                $sshKey = New-AzSshKey -ResourceGroupName $AksResourceGroup -Name $SshKeyName
-                Write-Verbose "SSH key created successfully."
-            } else {
-                Write-Verbose "SSH key '$SshKeyName' already exists in resource group '$AksResourceGroup'."
-            }
-        } catch {
-            Write-Error "Failed to create or verify SSH key: $_"
-            exit 1
-        }
-
-        # Step 5: Assign Roles for ACR and AKS Access
+        # Step 3: Assign Roles for ACR
         Set-SubscriptionContext -SubscriptionId $AcrSubscriptionId
         try {
-            Write-Verbose "Checking and assigning roles for ACR and AKS access..."
+            Write-Verbose "Checking and assigning roles for ACR access..."
 
             # Check and assign the custom "Role Assignment Creator" role
             $customRoleExists = Get-AzRoleAssignment -ObjectId $sp.Id -RoleDefinitionId "5d385d1a-a152-4e2d-b246-443d25882789" `
@@ -294,24 +215,18 @@ function Setup-AzureProject {
             exit 1
         }
 
-
-        # Step 6: Create the GitHub Actions Secrets
+        # Step 4: Create the GitHub Actions Secrets
         try {
             Write-Verbose "Creating or verifying GitHub Actions Secrets..."
 
             # Define the secrets and their values
             $secrets = @{
                 "ENTRA_CLIENT_ID"           = $sp.AppId
-                "ENTRA_SUBSCRIPTION_ID"     = $AksSubscriptionId
+                "ENTRA_SUBSCRIPTION_ID"     = $AciSubscriptionId
                 "ENTRA_SUBSCRIPTION_ID_SS"  = $AcrSubscriptionId
                 "ENTRA_TENANT_ID"           = (Get-AzContext).Tenant.Id
-                "AKS_PUBLIC_SSH_KEY"        = $sshKey.publicKey
                 "AZURE_ACR_NAME"            = $AcrName
                 "DOCKER_IMAGE_NAME"         = $DockerImageName
-                "AKS_RG"                    = $AksResourceGroup
-                "AKS_CLUSTER_NAME"          = $AksClusterName
-                "DEPLOYMENT_MANIFEST_PATH"  = $DeploymentManifestPath
-                "SERVICE_MANIFEST_PATH"     = $ServiceManifestPath
             }
 
             foreach ($secretName in $secrets.Keys) {
