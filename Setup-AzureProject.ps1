@@ -89,6 +89,10 @@ function Setup-AzureProject {
         [ValidateNotNullOrEmpty()]
         [string]$AcrName,
 
+        [Parameter(Mandatory = $true, HelpMessage = "The password of the Azure Container Registry.")]
+        [ValidateNotNullOrEmpty()]
+        [SecureString]$AcrPassword,
+
         # GitHub Parameters
         [Parameter(Mandatory = $true, HelpMessage = "The GitHub organization name.")]
         [ValidateNotNullOrEmpty()]
@@ -185,18 +189,6 @@ function Setup-AzureProject {
         try {
             Write-Verbose "Checking and assigning roles for ACR access..."
 
-            # Check and assign the custom "Role Assignment Creator" role
-            $customRoleExists = Get-AzRoleAssignment -ObjectId $sp.Id -RoleDefinitionId "5d385d1a-a152-4e2d-b246-443d25882789" `
-                -Scope "/subscriptions/$AcrSubscriptionId/resourceGroups/$AcrResourceGroup" -ErrorAction SilentlyContinue
-
-            if (-not $customRoleExists) {
-                New-AzRoleAssignment -ObjectId $sp.Id -RoleDefinitionId "5d385d1a-a152-4e2d-b246-443d25882789" `
-                    -Scope "/subscriptions/$AcrSubscriptionId/resourceGroups/$AcrResourceGroup"
-                Write-Verbose "'Role Assignment Creator' role assigned successfully."
-            } else {
-                Write-Verbose "'Role Assignment Creator' role already assigned."
-            }
-
             # Check and assign the "AcrPush" role
             $acrPushExists = Get-AzRoleAssignment -ObjectId $sp.Id -RoleDefinitionName "AcrPush" `
                 -Scope "/subscriptions/$AcrSubscriptionId/resourceGroups/$AcrResourceGroup/providers/Microsoft.ContainerRegistry/registries/$AcrName" `
@@ -222,9 +214,9 @@ function Setup-AzureProject {
             $secrets = @{
                 "ENTRA_CLIENT_ID"           = $sp.AppId
                 "ENTRA_SUBSCRIPTION_ID"     = $AciSubscriptionId
-                "ENTRA_SUBSCRIPTION_ID_SS"  = $AcrSubscriptionId
                 "ENTRA_TENANT_ID"           = (Get-AzContext).Tenant.Id
                 "AZURE_ACR_NAME"            = $AcrName
+                "AZURE_ACR_PASSWORD"        = ConvertFrom-SecureString $AcrPassword
                 "DOCKER_IMAGE_NAME"         = $DockerImageName
             }
 
