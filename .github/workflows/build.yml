@@ -125,5 +125,4 @@ jobs:
 
       - name: Print Deployment Outputs
         run: |
-          echo "intOutput: ${{ steps.infra-deployment.outputs.intOutput }}"
-          echo "stringOutput: ${{ steps.infra-deployment.outputs.stringOutput }}"
+          echo "stringOutput: ${{ steps.infra-deployment.outputs.containerGroupFqdn }}"
