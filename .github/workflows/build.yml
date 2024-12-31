@@ -9,12 +9,6 @@ on:
       - 'app/**'
       - 'infra/**'
   workflow_dispatch:
-    inputs:
-        location:
-            description: 'Azure region to deploy resources to'
-            required: false
-            default: 'switzerlandnorth'
-            type: string
 
 permissions: 
   id-token: write
@@ -119,7 +113,7 @@ jobs:
           type: deployment
           operation: create
           name: ${{ github.run_id }}
-          location: ${{ github.event.inputs.location }}
+          location: 'switzerlandnorth'
           scope: subscription
           subscription-id: ${{ secrets.ENTRA_SUBSCRIPTION_ID }}
           template-file: infra/main.bicep
