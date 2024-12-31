@@ -19,7 +19,7 @@ param dockerImage string = 'latzox.azurecr.io/quickstart-aci-dev-api:latest'
 param acrName string = 'latzox'
 
 @secure()
-param acrPassword string
+param acrPassword string = ''
 
 @description('The network configuration for the container')
 param network object = {
