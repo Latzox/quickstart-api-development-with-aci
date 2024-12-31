@@ -13,7 +13,7 @@ param location string = 'switzerlandnorth'
 param aciName string = 'aci-dev-api-001'
 
 @description('The Docker image to deploy')
-param dockerImage string = 'latzo.azurecr.io/quickstart-aci-dev-api:latest'
+param dockerImage string = 'latzox.azurecr.io/quickstart-aci-dev-api:latest'
 
 @description('The subscription ID of the Azure Container Registry')
 param acrSubId string = '00000000-0000-0000-0000-000000000000'
