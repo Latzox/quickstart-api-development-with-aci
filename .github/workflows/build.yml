@@ -124,6 +124,6 @@ jobs:
           template-file: infra/main.bicep
           parameters: |
             {
-              "acrSubId": "${{ secrets.ENTRA_SUBSCRIPTION_ID_SS }}",
-              "dockerImage": "${{ secrets.AZURE_ACR_NAME }}.azurecr.io/${{ secrets.DOCKER_IMAGE_NAME }}:${{ github.sha }}"
+              "dockerImage": "${{ secrets.AZURE_ACR_NAME }}.azurecr.io/${{ secrets.DOCKER_IMAGE_NAME }}:${{ github.sha }}",
+              "acrPassword": "${{ secrets.AZURE_ACR_PASSWORD }}"
             }
