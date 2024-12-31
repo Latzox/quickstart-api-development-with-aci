@@ -113,6 +113,7 @@ jobs:
           subscription-id: ${{ secrets.ENTRA_SUBSCRIPTION_ID }}
 
       - name: Infra Deployment
+        id: infra-deployment
         uses: azure/bicep-deploy@bed0974555908ee0609c2b50aceb984cb50ea68b
         with:
           type: deployment
@@ -127,3 +128,8 @@ jobs:
               "dockerImage": "${{ secrets.AZURE_ACR_NAME }}.azurecr.io/${{ secrets.DOCKER_IMAGE_NAME }}:${{ github.sha }}",
               "acrPassword": "${{ secrets.AZURE_ACR_PASSWORD }}"
             }
+
+      - name: Print Deployment Outputs
+        run: |
+          echo "intOutput: ${{ steps.infra-deployment.outputs.intOutput }}"
+          echo "stringOutput: ${{ steps.infra-deployment.outputs.stringOutput }}"
