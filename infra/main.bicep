@@ -49,6 +49,10 @@ param containerGroupName string = 'acgdevapi001'
 resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: rgName
   location: location
+  tags: {
+    application: 'quickstart-api-development-with-aci'
+    environment: 'dev'
+  }
 }
 
 @description('The avm module to deploy the container group')
@@ -85,6 +89,10 @@ module containerGroup 'br/public:avm/res/container-instance/container-group:0.4.
     location: location
     managedIdentities: {
       systemAssigned: true
+    }
+    tags: {
+      application: 'quickstart-api-development-with-aci'
+      environment: 'dev'
     }
   }
 }
