@@ -63,7 +63,6 @@ function Setup-AzureProject {
         https://github.com/Latzox/quickstart-api-development-with-aci
     #>
 
-
     param (
         # Service Principal Parameters
         [Parameter(Mandatory = $true, HelpMessage = "Display name for the Entra ID Service Principal.")]
