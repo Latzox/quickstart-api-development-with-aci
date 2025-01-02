@@ -125,7 +125,7 @@ jobs:
 
       - name: Print Deployment Outputs
         run: |
-          echo "stringOutput: ${{ steps.infra-deployment.outputs.containerGroupFqdn }}"
+          echo "ACI URL: http://${{ steps.infra-deployment.outputs.containerGroupFqdn }}:5000"
 
   Production:
     runs-on: ubuntu-latest
