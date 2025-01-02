@@ -9,7 +9,7 @@ client_id = os.getenv("CLIENT_ID", "Unknown Client ID")
 @app.route("/")
 def home():
     return (
-        f"Hello, Community! This is a Python container app served by container ID: {container_id}. "
+        f"Hello, Community! This is a Python container app served by container ID: {container_id}.\n"
         f"The CLIENT_ID is: {client_id}"
     )
 
