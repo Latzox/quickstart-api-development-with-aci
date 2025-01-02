@@ -66,9 +66,9 @@ jobs:
         run: | 
           $report = Invoke-ScriptAnalyzer -Path . -Recurse -ReportSummary
           if ($report.Count -eq 0) {
-              $markdownReport = "### No issues found :white_check_mark:"
+              $markdownReport = "## No issues found :white_check_mark:"
           } else {
-              $markdownReport = "### PSScriptAnalyzer Report :warning:`n"
+              $markdownReport = "## PSScriptAnalyzer Report :warning:`n"
               $markdownReport += "| RuleName | Severity | ScriptName | Line | Message |`n"
               $markdownReport += "| --- | --- | --- | --- | --- |`n"
               foreach ($item in $report) {
@@ -125,7 +125,8 @@ jobs:
 
       - name: Print Deployment Outputs
         run: |
-          echo "ACI URL: http://${{ steps.infra-deployment.outputs.containerGroupFqdn }}:5000"
+          echo "## Preview URL from Azure Container Instance" >> $GITHUB_STEP_SUMMARY
+          echo "Access URL: [http://${{ steps.infra-deployment.outputs.containerGroupFqdn }}:5000](http://${{ steps.infra-deployment.outputs.containerGroupFqdn }}:5000)" >> $GITHUB_STEP_SUMMARY
 
   Production:
     runs-on: ubuntu-latest
