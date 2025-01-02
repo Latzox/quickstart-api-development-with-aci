@@ -63,7 +63,7 @@ module containerGroup 'br/public:avm/res/container-instance/container-group:0.4.
           environmentVariables: [
             {
               name: 'CLIENT_ID'
-              value: 'TestClientId'
+              value: aciName
             }
             {
               name: 'CLIENT_SECRET'
