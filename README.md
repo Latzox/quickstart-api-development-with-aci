@@ -1,3 +1,6 @@
+
+[![Build](https://github.com/Latzox/quickstart-api-development-with-aci/actions/workflows/build.yml/badge.svg)](https://github.com/Latzox/quickstart-api-development-with-aci/actions/workflows/build.yml) [![Dev.to](https://img.shields.io/badge/dev.to-0A0A0A?style=for-the-badge&logo=devdotto&logoColor=white)](https://dev.to/latzo)
+
 # Quickstart API Development with Azure Container Instance (ACI)
 
 This repository contains the code and configurations for deploying and managing applications and infrastructure using Azure Container Instances (ACI), Azure Bicep, and Docker. It is structured to support various stages of development, from infrastructure provisioning to application deployment.
